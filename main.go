@@ -4,7 +4,10 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 	"reflect"
+	"strconv"
+	"syscall"
 	"time"
 
 	gctx "github.com/gorilla/context"
@@ -167,6 +170,47 @@ func dropboxStorageHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+func osStorageHandler(w http.ResponseWriter, r *http.Request) {
+	fs := syscall.Statfs_t{}
+	wd, _ := os.Getwd()
+	err := syscall.Statfs(wd, &fs)
+	if err != nil {
+		return
+	}
+
+	all := (fs.Blocks * uint64(fs.Bsize))
+	avai := (fs.Bavail * uint64(fs.Bsize))
+	free := (fs.Bfree * uint64(fs.Bsize))
+
+	disk := struct {
+		All            uint64  `json:"size"`
+		AllS           string  `json:"size_string"`
+		Available      uint64  `json:"available"`
+		AvailableS     string  `json:"available_string"`
+		Free           uint64  `json:"free"`
+		FreeS          string  `json:"free_string"`
+		Used           uint64  `json:"used"`
+		UsedS          string  `json:"used_string"`
+		PercentileUsed float32 `json:"used_percentile"`
+	}{
+		all,
+		strconv.FormatFloat(float64(all)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
+		avai,
+		strconv.FormatFloat(float64(avai)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
+		free,
+		strconv.FormatFloat(float64(free)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
+		(all - free),
+		strconv.FormatFloat(float64(all-free)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
+		100 - ((float32(free) * 100) / float32(all)),
+	}
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(disk)
+}
+
 // Router
 type router struct {
 	*httprouter.Router
@@ -222,12 +266,16 @@ func main() {
 
 	router := newRouter()
 
+	// DROPBOX
 	router.Get("/dropbox/search/:term", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxSearchHandler))
 	router.Get("/dropbox/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxStorageHandler))
 
+	// OS
+	router.Get("/os/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(osStorageHandler))
+
 	router.Options("/*name", optionsHandlers.ThenFunc(allowCorsHandler))
 
-	port := ":8888"
+	port := ":9999"
 	log.Printf("Listening on port %s \n\n", port)
 
 	err := http.ListenAndServe(port, router)
