@@ -1,1 +1,1 @@
-# OS Uritl -> dropbox hooks, storage checks, etc
+# OS Utils -> dropbox hooks, storage checks, etc
