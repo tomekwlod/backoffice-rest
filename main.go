@@ -101,6 +101,16 @@ func contentTypeHandler(next http.Handler) http.Handler {
 	return http.HandlerFunc(fn)
 }
 
+func crossDomainAcceptHandler(next http.Handler) http.Handler {
+	fn := func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+
+		next.ServeHTTP(w, r)
+	}
+
+	return http.HandlerFunc(fn)
+}
+
 func bodyHandler(v interface{}) func(http.Handler) http.Handler {
 	t := reflect.TypeOf(v)
 
@@ -153,7 +163,6 @@ func dropboxSearchHandler(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(200)
@@ -163,7 +172,6 @@ func dropboxSearchHandler(w http.ResponseWriter, r *http.Request) {
 func dropboxStorageHandler(w http.ResponseWriter, r *http.Request) {
 	result := dropbox.Storage()
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(200)
@@ -204,11 +212,17 @@ func osStorageHandler(w http.ResponseWriter, r *http.Request) {
 		100 - ((float32(free) * 100) / float32(all)),
 	}
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	w.Header().Set("Content-Type", "application/json")
 
 	w.WriteHeader(200)
 	json.NewEncoder(w).Encode(disk)
+}
+
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(true)
 }
 
 // Router
@@ -261,7 +275,7 @@ func (r *router) Options(path string, handler http.Handler) {
 // }
 
 func main() {
-	commonHandlers := alice.New(gctx.ClearHandler, loggingHandler, recoverHandler)
+	commonHandlers := alice.New(gctx.ClearHandler, loggingHandler, recoverHandler, crossDomainAcceptHandler)
 	optionsHandlers := alice.New(gctx.ClearHandler, loggingHandler)
 
 	router := newRouter()
@@ -272,6 +286,9 @@ func main() {
 
 	// OS
 	router.Get("/os/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(osStorageHandler))
+
+	// PING HOOK
+	router.Get("/ping", commonHandlers.Append(contentTypeHandler).ThenFunc(pingHandler))
 
 	router.Options("/*name", optionsHandlers.ThenFunc(allowCorsHandler))
 
