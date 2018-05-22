@@ -280,9 +280,9 @@ func main() {
 
 	router := newRouter()
 
-	// DROPBOX
-	router.Get("/dropbox/search/:term", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxSearchHandler))
-	router.Get("/dropbox/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxStorageHandler))
+	// DROPBOX / upload
+	// router.Get("/dropbox/search/:term", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxSearchHandler))
+	// router.Get("/dropbox/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(dropboxStorageHandler))
 
 	// OS
 	router.Get("/os/storage", commonHandlers.Append(contentTypeHandler).ThenFunc(osStorageHandler))
