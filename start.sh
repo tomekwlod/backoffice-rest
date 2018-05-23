@@ -1,6 +1,6 @@
 #!/bin/bash
 
-list="$(ps aux | grep os-utils | grep -v grep)"
+list="$(ps aux | grep ostools | grep -v grep)"
 pids="$(echo -e "${list}" | awk '{print $2}')"
 
 #if ((${#pids[@]} > 0)); then
@@ -16,7 +16,7 @@ pids="$(echo -e "${list}" | awk '{print $2}')"
 
 echo -e "\nStaring a new server... "
 
-./os-utils >> /var/go/os-tools/logs/httpd.log 2>&1 &
+./ostools >> /var/go/os-tools/logs/httpd.log 2>&1 &
 
 echo -e "Done"
 
