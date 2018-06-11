@@ -209,7 +209,7 @@ func osStorageHandler(w http.ResponseWriter, r *http.Request) {
 		strconv.FormatFloat(float64(free)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
 		(all - free),
 		strconv.FormatFloat(float64(all-free)/float64(1024*1024*1024*1), 'f', 2, 64) + " GB",
-		100 - ((float32(free) * 100) / float32(all)),
+		100 - ((float32(avai) * 100) / float32(all)),
 	}
 
 	w.Header().Set("Content-Type", "application/json")
